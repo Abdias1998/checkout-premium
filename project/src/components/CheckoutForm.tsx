@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 
 // Interfaces pour les réponses de l'API FeexPay
 interface RequestPayResponse {
@@ -96,30 +97,77 @@ const CheckoutForm = () => {
       setNotification({ type: 'info', message: 'Demande envoyée. Veuillez valider sur votre téléphone...' });
 
       let paymentStatus = '';
-      const maxAttempts = 24; // 2 minutes
+      let finalStatusMessage = ''; // Pour stocker le message d'erreur spécifique
+      const maxAttempts = 24; // 2 minutes  24
 
       for (let i = 0; i < maxAttempts; i++) {
         await sleep(5000);
-        const statusResponse = await fetch(`https://api.feexpay.me/api/transactions/getrequesttopay/integration/${reference}`, {
-          headers: { 'Authorization': `Bearer ${apiKey}` },
-        });
+        try {
+          const statusResponse = await fetch(`https://api.feexpay.me/api/transactions/getrequesttopay/integration/${reference}`, {
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+          });
 
-        if (statusResponse.ok) {
-          const statusResult: StatusResponse = await statusResponse.json();
-          if (statusResult.status === 'SUCCESSFUL') {
-            paymentStatus = 'SUCCESSFUL';
-            break;
+          if (statusResponse.ok) {
+            const statusResult: StatusResponse = await statusResponse.json();
+            if (statusResult.status === 'SUCCESSFUL') {
+              paymentStatus = 'SUCCESSFUL';
+              break;
+            }
+            if (statusResult.status === 'FAILED' || statusResult.status === 'CANCELLED') {
+              finalStatusMessage = `Paiement ${statusResult.status === 'FAILED' ? 'échoué' : 'annulé'}. Référence de la transaction : ${reference}. Veuillez contacter le support si le problème persiste.`;
+              throw new Error(finalStatusMessage);
+            }
+            // Si PENDING, on continue la boucle
+          } else {
+            // Gérer les erreurs de réseau ou de serveur pendant le polling, sans arrêter la boucle immédiatement
+            console.warn(`Erreur lors de la vérification du statut (tentative ${i + 1}/${maxAttempts}): ${statusResponse.status}`);
           }
-          if (statusResult.status === 'FAILED' || statusResult.status === 'CANCELLED') {
-            throw new Error(`Paiement échoué ou annulé.`);
-          }
+        } catch (pollError) {
+          // Si l'erreur est due à un FAILED/CANCELLED, on la propage
+          if (finalStatusMessage) throw pollError;
+          // Pour d'autres erreurs de fetch, on log et on continue (ou on arrête si c'est critique)
+          console.error(`Erreur critique pendant le polling (tentative ${i + 1}/${maxAttempts}):`, pollError);
+          // Optionnel: décider d'arrêter le polling ici si l'erreur est persistante
         }
       }
 
       if (paymentStatus === 'SUCCESSFUL') {
-        setNotification({ type: 'success', message: 'Paiement réussi ! Un email de confirmation vous sera envoyé.' });
+        if (formData.email && formData.email.trim() !== '') {
+          // Envoyer l'email de confirmation
+          const templateParams = {
+            to_name: `${formData.firstName} ${formData.lastName}`,
+            to_email: formData.email,
+            delivery_type: deliveryMethod === 'usb' ? 'Clé USB' : 'Lien Vidéo',
+            delivery_info: deliveryMethod === 'usb'
+              ? `Votre clé USB sera livrée à l'adresse suivante : ${formData.address}. Nous vous contacterons au ${formData.phone} pour confirmer.`
+              : 'Vous pouvez accéder à votre vidéo via ce lien : https://drive.google.com/drive/folders/1CvC21AFYVv0C2Xw8yw-UvXN7ffr-ow5g?usp=sharing',
+            transaction_reference: reference, // référence que tu génères ou reçois
+            amount: amount, // montant payé
+          };
+          
+          try {
+            await emailjs.send(
+              'service_p23fwvh', // Remplacez par votre Service ID EmailJS
+              'template_9b8zrkw', // Remplacez par votre Template ID EmailJS
+              templateParams,
+              'DcVixUWN5yqMZFiX7' // Remplacez par votre Public Key EmailJS
+            );
+            setNotification({ type: 'success', message: 'Paiement réussi ! Un email de confirmation vous a été envoyé.' });
+          } catch (emailError) {
+            console.error('Failed to send email:', emailError);
+            setNotification({ type: 'success', message: 'Paiement réussi, mais l\'envoi de l\'email de confirmation a échoué. Veuillez vérifier votre adresse email.' });
+          }
+        } else {
+          // Gérer le cas où l'adresse e-mail est vide
+          console.error('Recipient email address is empty. Cannot send confirmation email.');
+          setNotification({ type: 'success', message: 'Paiement réussi ! (L\'email de confirmation n\'a pas pu être envoyé car l\'adresse email est manquante).' });
+        }
       } else {
-        throw new Error('La confirmation du paiement a expiré.');
+        // Si la boucle se termine et que le statut n'est pas SUCCESSFUL
+        if (!finalStatusMessage) { // Si aucun message d'erreur spécifique n'a été défini (FAILED/CANCELLED)
+            finalStatusMessage = `La confirmation du paiement a expiré après 2 minutes. Référence de la transaction : ${reference}. Veuillez contacter le support.`;
+        }
+        throw new Error(finalStatusMessage);
       }
 
     } catch (error) {
