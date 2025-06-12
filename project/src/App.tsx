@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import ProductSection from './components/ProductSection';
 import CheckoutForm from './components/CheckoutForm';
@@ -9,7 +9,7 @@ import { ArrowUp } from 'lucide-react';
 
 function App() {
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [deliveryMethod, setDeliveryMethod] = useState('usb');
+  const [deliveryMethod, setDeliveryMethod] = useState<'usb' | 'link'>('usb');
 
   useEffect(() => {
     const handleScroll = () => {

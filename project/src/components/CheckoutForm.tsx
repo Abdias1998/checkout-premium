@@ -16,8 +16,12 @@ interface StatusResponse {
 // Helper pour créer une pause
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const CheckoutForm = () => {
-  const [deliveryMethod, setDeliveryMethod] = useState<'usb' | 'link'>('usb');
+interface CheckoutFormProps {
+  deliveryMethod: 'usb' | 'link';
+  setDeliveryMethod: (method: 'usb' | 'link') => void;
+}
+
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDeliveryMethod }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -195,6 +199,44 @@ const CheckoutForm = () => {
   return (
     <form id="checkout-form" onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 mb-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Finaliser votre commande</h2>
+
+      <div className="mb-6">
+        <h3 className="text-lg font-medium text-gray-800 mb-3">1. Choisissez votre option</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label 
+            className={`flex items-center p-4 rounded-lg border cursor-pointer transition-all ${deliveryMethod === 'usb' ? 'bg-blue-50 border-blue-500 shadow-md' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+            <input
+              type="radio"
+              name="deliveryMethod"
+              value="usb"
+              checked={deliveryMethod === 'usb'}
+              onChange={() => setDeliveryMethod('usb')}
+              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            />
+            <div className="ml-3">
+              <span className="font-bold text-gray-800">Clé USB</span>
+              <p className="text-sm text-gray-600">Recevez une clé USB avec les 200 dessins animés.</p>
+            </div>
+          </label>
+          <label 
+            className={`flex items-center p-4 rounded-lg border cursor-pointer transition-all ${deliveryMethod === 'link' ? 'bg-blue-50 border-blue-500 shadow-md' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+            <input
+              type="radio"
+              name="deliveryMethod"
+              value="link"
+              checked={deliveryMethod === 'link'}
+              onChange={() => setDeliveryMethod('link')}
+              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            />
+            <div className="ml-3">
+              <span className="font-bold text-gray-800">Lien Vidéo</span>
+              <p className="text-sm text-gray-600">Accès instantané via un lien de téléchargement.</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <h3 className="text-lg font-medium text-gray-800 mb-3">2. Remplissez vos informations</h3>
 
       {notification && (
         <div className={`p-4 mb-4 rounded-lg flex items-center ${

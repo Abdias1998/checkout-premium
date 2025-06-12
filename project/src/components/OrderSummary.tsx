@@ -1,7 +1,7 @@
 import { ShieldCheck } from 'lucide-react';
 
 interface OrderSummaryProps {
-  deliveryMethod: string;
+  deliveryMethod: 'usb' | 'link';
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({ deliveryMethod }) => {

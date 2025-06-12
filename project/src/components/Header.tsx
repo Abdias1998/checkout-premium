@@ -1,6 +1,5 @@
 import React from 'react';
 import { ShoppingBag, ChevronDown, Menu } from 'lucide-react';
-import logo from '../assets/logo.png';
 
 const Header: React.FC = () => {
   return (
@@ -15,12 +14,12 @@ const Header: React.FC = () => {
           </div>
         </div>
         
-        <div className="hidden md:flex items-center space-x-6">
+        {/* <div className="hidden md:flex items-center space-x-6">
           <a href="#" className="text-gray-700 hover:text-blue-700 transition-colors">Accueil</a>
           <a href="#" className="text-gray-700 hover:text-blue-700 transition-colors">Produits</a>
           <a href="#" className="text-gray-700 hover:text-blue-700 transition-colors">À propos</a>
           <a href="#" className="text-gray-700 hover:text-blue-700 transition-colors">Contact</a>
-        </div>
+        </div> */}
         
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
