@@ -238,18 +238,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
 
       <h3 className="text-lg font-medium text-gray-800 mb-3">2. Remplissez vos informations</h3>
 
-      {notification && (
-        <div className={`p-4 mb-4 rounded-lg flex items-center ${
-          notification.type === 'success' ? 'bg-green-100 text-green-800' :
-          notification.type === 'error'   ? 'bg-red-100 text-red-800' :
-          'bg-blue-100 text-blue-800' // info
-        }`}>
-          {notification.type === 'success' && <CheckCircle className="mr-2 h-5 w-5" />}
-          {notification.type === 'error' && <AlertCircle className="mr-2 h-5 w-5" />}
-          {notification.message}
-        </div>
-      )}
-
+   
       <div className="mb-6">
      
       </div>
@@ -319,6 +308,17 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
           </div>
         </div>
       </div>
+      {notification && (
+        <div className={`p-4 mb-4 rounded-lg flex items-center ${
+          notification.type === 'success' ? 'bg-green-100 text-green-800' :
+          notification.type === 'error'   ? 'bg-red-100 text-red-800' :
+          'bg-blue-100 text-blue-800' // info
+        }`}>
+          {notification.type === 'success' && <CheckCircle className="mr-2 h-5 w-5" />}
+          {notification.type === 'error' && <AlertCircle className="mr-2 h-5 w-5" />}
+          {notification.message}
+        </div>
+      )}
 
       <button type="submit" disabled={isLoading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 disabled:bg-gray-400">
         {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
