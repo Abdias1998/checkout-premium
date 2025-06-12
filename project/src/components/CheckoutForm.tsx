@@ -251,27 +251,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       )}
 
       <div className="mb-6">
-        <h3 className="font-medium text-gray-700 mb-2">Comment souhaitez-vous recevoir votre commande ?</h3>
-        <div className="flex rounded-md shadow-sm">
-          <button
-            type="button"
-            onClick={() => setDeliveryMethod('usb')}
-            className={`flex-1 py-2 px-4 rounded-l-md transition-colors ${deliveryMethod === 'usb' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-          >
-            Clé USB
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeliveryMethod('link')}
-            className={`flex-1 py-2 px-4 rounded-r-md transition-colors ${deliveryMethod === 'link' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-          >
-            Lien vidéo
-          </button>
-        </div>
+     
       </div>
 
       <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-4">Informations personnelles</h3>
+        {/* <h3 className="text-lg font-semibold mb-4">Informations personnelles</h3> */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -330,7 +314,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
           </div>
           <div className="ml-3">
             <p className="text-sm text-blue-700">
-              Vous serez redirigé pour confirmer le paiement sur votre téléphone.
+              Vous aurez un push USSD pour confirmer le paiement
             </p>
           </div>
         </div>

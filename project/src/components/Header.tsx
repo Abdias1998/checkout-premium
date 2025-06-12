@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, ChevronDown, Menu } from 'lucide-react';
+import { ChevronDown, Menu } from 'lucide-react';
 
 const Header: React.FC = () => {
   return (
@@ -26,22 +26,22 @@ const Header: React.FC = () => {
             <div className="relative cursor-pointer group">
               <div className="flex items-center space-x-1">
                 <span className="text-sm font-medium">Benin(FCFA)</span>
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" /> 
               </div>
               
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
+              {/* <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
                 <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Benin(FCFA)</a>
                 <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Other countries</a>
-              </div>
+              </div> */}
             </div>
           </div>
           
-          <div className="relative">
+          {/* <div className="relative">
             <ShoppingBag className="h-6 w-6 text-gray-700" />
             <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
               1
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
     </header>
