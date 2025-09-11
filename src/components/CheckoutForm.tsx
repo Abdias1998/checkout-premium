@@ -65,7 +65,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       : formData.mobileNumber;
 
     const requestBody = {
-      amount,
+      amount:100,
       phoneNumber: fullPhoneNumber,
       shop: shopId,
       firstName: formData.firstName,
