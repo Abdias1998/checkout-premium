@@ -1,15 +1,7 @@
 import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
-import emailjs from '@emailjs/browser';
 
-// Lien de livraison affiché au payeur après paiement et envoyé par email
 const VIDEO_LINK = 'https://drive.google.com/drive/folders/1CvC21AFYVv0C2Xw8yw-UvXN7ffr-ow5g?usp=sharing';
-
-const EMAILJS_CONFIG = {
-  serviceId: 'service_p23fwvh',
-  templateId: 'template_9b8zrkw',
-  publicKey: 'DcVixUWN5yqMZFiX7',
-};
 
 // Interfaces pour les réponses de l'API FeexPay
 interface RequestPayResponse {
@@ -25,32 +17,6 @@ interface StatusResponse {
 // Helper pour créer une pause
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Envoi de l'email de confirmation avec 1 nouvelle tentative en cas d'échec.
-// Retourne null si l'email a été envoyé, sinon le message d'erreur détaillé.
-const sendConfirmationEmail = async (templateParams: Record<string, unknown>): Promise<string | null> => {
-  const maxAttempts = 2;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      await emailjs.send(
-        EMAILJS_CONFIG.serviceId,
-        EMAILJS_CONFIG.templateId,
-        templateParams,
-        { publicKey: EMAILJS_CONFIG.publicKey }
-      );
-      return null;
-    } catch (error) {
-      console.error(`Échec de l'envoi de l'email (tentative ${attempt}/${maxAttempts}):`, error);
-      if (attempt < maxAttempts) {
-        await sleep(2000);
-        continue;
-      }
-      const err = error as { text?: string; message?: string; status?: number };
-      return err.text || err.message || `erreur EmailJS (statut ${err.status ?? 'inconnu'})`;
-    }
-  }
-  return null;
-};
-
 interface CheckoutFormProps {
   deliveryMethod: 'usb' | 'link';
   setDeliveryMethod: (method: 'usb' | 'link') => void;
@@ -60,7 +26,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
     whatsapp: '',
     address: '',
     mobileOperator: 'mtn',
@@ -87,7 +52,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     const apiKey = "fp_KmimqoKTSOAiMqqRSWLeyDcmPuts3exVYxd2RILxCaGcK0sfXIPD8AXT98PyZPGa";
     const shopId = "PAjtgouuFlCibjn";
 
-    const amount = deliveryMethod === 'usb' ? 10 : 10;
+    const amount = deliveryMethod === 'usb' ? 5000 : 3000;
 
     const countryCodes: { [key: string]: string } = {
       'mtn': '229',
@@ -111,15 +76,15 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       firstName: formData.firstName,
       lastName: formData.lastName,
       description: `Achat ${deliveryMethod === 'usb' ? 'Clé USB' : 'Lien Vidéo'}`,
-      email: formData.email,
       whatsapp: formData.whatsapp.replace(/\s+/g, ''),
       address: formData.address,
       type: deliveryMethod,
       callback_info: {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         phone: formData.phone,
         whatsapp: formData.whatsapp.replace(/\s+/g, ''),
         address: formData.address,
-        email: formData.email,
         type: deliveryMethod,
       },
     };
@@ -178,35 +143,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       }
 
       if (paymentStatus === 'SUCCESSFUL') {
-        // Envoi de l'email de confirmation (avec nouvelle tentative en cas d'échec)
-        let emailFailure: string | null = null;
-        if (formData.email && formData.email.trim() !== '') {
-          const templateParams = {
-            to_name: `${formData.firstName} ${formData.lastName}`,
-            to_email: formData.email,
-            delivery_type: deliveryMethod === 'usb' ? 'Clé USB' : 'Lien Vidéo',
-            delivery_info: deliveryMethod === 'usb'
-              ? `Votre clé USB sera livrée à l'adresse suivante : ${formData.address}. Nous vous contacterons au ${formData.phone} pour confirmer.`
-              : `Vous pouvez accéder à votre vidéo via ce lien : ${VIDEO_LINK}`,
-            video_link: VIDEO_LINK,
-            whatsapp: formData.whatsapp,
-            transaction_reference: reference,
-            amount: amount,
-          };
-          emailFailure = await sendConfirmationEmail(templateParams);
-        } else {
-          emailFailure = 'adresse email manquante';
-        }
-
-        const emailNote = emailFailure
-          ? `L'email de confirmation n'a pas pu être envoyé : ${emailFailure}.`
-          : 'Un email de confirmation vous a été envoyé.';
-
         setNotification({
           type: 'success',
           message: deliveryMethod === 'link'
-            ? `Paiement réussi ! Cliquez sur le lien ci-dessous pour accéder à votre vidéo. ${emailNote}`
-            : `Paiement réussi ! ${emailNote}`,
+            ? 'Paiement effectué ! Cliquez sur le lien ci-dessous pour accéder à votre vidéo.'
+            : 'Paiement effectué ! Votre commande est bien enregistrée.',
           link: deliveryMethod === 'link'
             ? { href: VIDEO_LINK, label: 'Ouvrir mon lien vidéo' }
             : undefined,
@@ -303,11 +244,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" id="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="votre@email.com" required />
-          </div>
-
-          <div>
             <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">Numéro WhatsApp</label>
             <input type="tel" id="whatsapp" value={formData.whatsapp} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="+229 01 02 03 04 05" required />
             <p className="text-xs text-gray-500 mt-1">Nous vous contacterons sur ce numéro WhatsApp pour la confirmation et la livraison</p>
@@ -384,6 +320,19 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
                   Conservez ce lien, il vous donne un accès immédiat à votre vidéo.
                 </p>
               </div>
+            )}
+            {(notification.type === 'success' || notification.type === 'error') && (
+              <p className="text-sm mt-3">
+                Un souci ?{' '}
+                <a
+                  href="https://wa.me/2290167919150?text=Bonjour%2C%20j%27ai%20un%20souci%20avec%20ma%20commande"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-semibold hover:opacity-80"
+                >
+                  Écrivez-nous au 01 67 91 91 50
+                </a>
+              </p>
             )}
           </div>
         </div>
