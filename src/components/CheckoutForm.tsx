@@ -83,7 +83,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     };
 
     try {
-      const initialResponse = await fetch(`https://api.feexpay.me/api/transactions/public/requesttopay/${formData.mobileOperator}`, {
+      const initialResponse = await fetch(`https://api-v2.feexpay.me/api/transactions/public/requesttopay/${formData.mobileOperator}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       for (let i = 0; i < maxAttempts; i++) {
         await sleep(5000);
         try {
-          const statusResponse = await fetch(`https://api.feexpay.me/api/transactions/getrequesttopay/integration/${reference}`, {
+          const statusResponse = await fetch(`https://api-v2.feexpay.me/api/transactions/getrequesttopay/integration/${reference}`, {
             headers: { 'Authorization': `Bearer ${apiKey}` },
           });
 
