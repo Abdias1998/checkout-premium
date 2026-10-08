@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
+
+// Lien de livraison affiché au payeur après paiement et envoyé par email
+const VIDEO_LINK = 'https://drive.google.com/drive/folders/1CvC21AFYVv0C2Xw8yw-UvXN7ffr-ow5g?usp=sharing';
+
+const EMAILJS_CONFIG = {
+  serviceId: 'service_p23fwvh',
+  templateId: 'template_9b8zrkw',
+  publicKey: 'DcVixUWN5yqMZFiX7',
+};
 
 // Interfaces pour les réponses de l'API FeexPay
 interface RequestPayResponse {
@@ -16,6 +25,32 @@ interface StatusResponse {
 // Helper pour créer une pause
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Envoi de l'email de confirmation avec 1 nouvelle tentative en cas d'échec.
+// Retourne null si l'email a été envoyé, sinon le message d'erreur détaillé.
+const sendConfirmationEmail = async (templateParams: Record<string, unknown>): Promise<string | null> => {
+  const maxAttempts = 2;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await emailjs.send(
+        EMAILJS_CONFIG.serviceId,
+        EMAILJS_CONFIG.templateId,
+        templateParams,
+        { publicKey: EMAILJS_CONFIG.publicKey }
+      );
+      return null;
+    } catch (error) {
+      console.error(`Échec de l'envoi de l'email (tentative ${attempt}/${maxAttempts}):`, error);
+      if (attempt < maxAttempts) {
+        await sleep(2000);
+        continue;
+      }
+      const err = error as { text?: string; message?: string; status?: number };
+      return err.text || err.message || `erreur EmailJS (statut ${err.status ?? 'inconnu'})`;
+    }
+  }
+  return null;
+};
+
 interface CheckoutFormProps {
   deliveryMethod: 'usb' | 'link';
   setDeliveryMethod: (method: 'usb' | 'link') => void;
@@ -26,13 +61,18 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     firstName: '',
     lastName: '',
     email: '',
+    whatsapp: '',
     address: '',
     mobileOperator: 'mtn',
     mobileNumber: '',
     phone: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error' | 'info';
+    message: string;
+    link?: { href: string; label: string };
+  } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
@@ -72,10 +112,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       lastName: formData.lastName,
       description: `Achat ${deliveryMethod === 'usb' ? 'Clé USB' : 'Lien Vidéo'}`,
       email: formData.email,
+      whatsapp: formData.whatsapp.replace(/\s+/g, ''),
       address: formData.address,
       type: deliveryMethod,
       callback_info: {
         phone: formData.phone,
+        whatsapp: formData.whatsapp.replace(/\s+/g, ''),
         address: formData.address,
         email: formData.email,
         type: deliveryMethod,
@@ -136,36 +178,39 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       }
 
       if (paymentStatus === 'SUCCESSFUL') {
+        // Envoi de l'email de confirmation (avec nouvelle tentative en cas d'échec)
+        let emailFailure: string | null = null;
         if (formData.email && formData.email.trim() !== '') {
-          // Envoyer l'email de confirmation
           const templateParams = {
             to_name: `${formData.firstName} ${formData.lastName}`,
             to_email: formData.email,
             delivery_type: deliveryMethod === 'usb' ? 'Clé USB' : 'Lien Vidéo',
             delivery_info: deliveryMethod === 'usb'
               ? `Votre clé USB sera livrée à l'adresse suivante : ${formData.address}. Nous vous contacterons au ${formData.phone} pour confirmer.`
-              : 'Vous pouvez accéder à votre vidéo via ce lien : https://drive.google.com/drive/folders/1CvC21AFYVv0C2Xw8yw-UvXN7ffr-ow5g?usp=sharing',
-            transaction_reference: reference, // référence que tu génères ou reçois
-            amount: amount, // montant payé
+              : `Vous pouvez accéder à votre vidéo via ce lien : ${VIDEO_LINK}`,
+            video_link: VIDEO_LINK,
+            whatsapp: formData.whatsapp,
+            transaction_reference: reference,
+            amount: amount,
           };
-          
-          try {
-            await emailjs.send(
-              'service_p23fwvh', // Remplacez par votre Service ID EmailJS
-              'template_9b8zrkw', // Remplacez par votre Template ID EmailJS
-              templateParams,
-              'DcVixUWN5yqMZFiX7' // Remplacez par votre Public Key EmailJS
-            );
-            setNotification({ type: 'success', message: 'Paiement réussi ! Un email de confirmation vous a été envoyé.' });
-          } catch (emailError) {
-            console.error('Failed to send email:', emailError);
-            setNotification({ type: 'success', message: 'Paiement réussi, mais l\'envoi de l\'email de confirmation a échoué. Veuillez vérifier votre adresse email.' });
-          }
+          emailFailure = await sendConfirmationEmail(templateParams);
         } else {
-          // Gérer le cas où l'adresse e-mail est vide
-          console.error('Recipient email address is empty. Cannot send confirmation email.');
-          setNotification({ type: 'success', message: 'Paiement réussi ! (L\'email de confirmation n\'a pas pu être envoyé car l\'adresse email est manquante).' });
+          emailFailure = 'adresse email manquante';
         }
+
+        const emailNote = emailFailure
+          ? `L'email de confirmation n'a pas pu être envoyé : ${emailFailure}.`
+          : 'Un email de confirmation vous a été envoyé.';
+
+        setNotification({
+          type: 'success',
+          message: deliveryMethod === 'link'
+            ? `Paiement réussi ! Cliquez sur le lien ci-dessous pour accéder à votre vidéo. ${emailNote}`
+            : `Paiement réussi ! ${emailNote}`,
+          link: deliveryMethod === 'link'
+            ? { href: VIDEO_LINK, label: 'Ouvrir mon lien vidéo' }
+            : undefined,
+        });
       } else {
         // Si la boucle se termine et que le statut n'est pas SUCCESSFUL
         if (!finalStatusMessage) { // Si aucun message d'erreur spécifique n'a été défini (FAILED/CANCELLED)
@@ -262,6 +307,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
             <input type="email" id="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="votre@email.com" required />
           </div>
 
+          <div>
+            <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">Numéro WhatsApp</label>
+            <input type="tel" id="whatsapp" value={formData.whatsapp} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="+229 01 02 03 04 05" required />
+            <p className="text-xs text-gray-500 mt-1">Nous vous contacterons sur ce numéro WhatsApp pour la confirmation et la livraison</p>
+          </div>
+
           {deliveryMethod === 'usb' && (
             <>
               <div>
@@ -309,14 +360,32 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
         </div>
       </div>
       {notification && (
-        <div className={`p-4 mb-4 rounded-lg flex items-center ${
+        <div className={`p-4 mb-4 rounded-lg flex items-start ${
           notification.type === 'success' ? 'bg-green-100 text-green-800' :
           notification.type === 'error'   ? 'bg-red-100 text-red-800' :
           'bg-blue-100 text-blue-800' // info
         }`}>
-          {notification.type === 'success' && <CheckCircle className="mr-2 h-5 w-5" />}
-          {notification.type === 'error' && <AlertCircle className="mr-2 h-5 w-5" />}
-          {notification.message}
+          {notification.type === 'success' && <CheckCircle className="mr-2 h-5 w-5 flex-shrink-0" />}
+          {notification.type === 'error' && <AlertCircle className="mr-2 h-5 w-5 flex-shrink-0" />}
+          <div className="flex-1">
+            <span>{notification.message}</span>
+            {notification.link && (
+              <div>
+                <a
+                  href={notification.link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-5 rounded-lg transition-colors duration-200 shadow-md"
+                >
+                  <ExternalLink className="h-5 w-5" />
+                  {notification.link.label}
+                </a>
+                <p className="text-xs text-green-700 mt-2">
+                  Conservez ce lien, il vous donne un accès immédiat à votre vidéo.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
