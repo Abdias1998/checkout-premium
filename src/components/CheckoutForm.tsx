@@ -44,8 +44,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     setIsLoading(true);
     setNotification(null);
 
-    const apiKey = "fp_HHNoQGt9Vn8KpZoLaBkG3uEeKpLUYBaHUZIZXJE3Xgv0OKG2tK3A7PtlytctikrJ";
-    const shopId = "671a774c706593edb3dc4ab2";
+    const apiKey = "fp_KmimqoKTSOAiMqqRSWLeyDcmPuts3exVYxd2RILxCaGcK0sfXIPD8AXT98PyZPGa";
+    const shopId = "PAjtgouuFlCibjn";
 
     const amount = deliveryMethod === 'usb' ? 5000 : 3000;
 
