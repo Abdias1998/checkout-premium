@@ -47,7 +47,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     const apiKey = "fp_KmimqoKTSOAiMqqRSWLeyDcmPuts3exVYxd2RILxCaGcK0sfXIPD8AXT98PyZPGa";
     const shopId = "PAjtgouuFlCibjn";
 
-    const amount = deliveryMethod === 'usb' ? 5000 : 3000;
+    const amount = deliveryMethod === 'usb' ? 10 : 10;
 
     const countryCodes: { [key: string]: string } = {
       'mtn': '229',
