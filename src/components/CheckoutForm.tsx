@@ -30,7 +30,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     address: '',
     mobileOperator: 'mtn',
     mobileNumber: '',
-    phone: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{
@@ -48,9 +47,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     e.preventDefault();
     setIsLoading(true);
     setNotification(null);
-
-    const apiKey = "fp_KmimqoKTSOAiMqqRSWLeyDcmPuts3exVYxd2RILxCaGcK0sfXIPD8AXT98PyZPGa";
-    const shopId = "PAjtgouuFlCibjn";
 
     const amount = deliveryMethod === 'usb' ? 5000 : 3000;
 
@@ -72,7 +68,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
     const requestBody = {
       amount,
       phoneNumber: fullPhoneNumber,
-      shop: shopId,
       firstName: formData.firstName,
       lastName: formData.lastName,
       description: `Achat ${deliveryMethod === 'usb' ? 'Clé USB' : 'Lien Vidéo'}`,
@@ -82,7 +77,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       callback_info: {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        phone: formData.phone,
         whatsapp: formData.whatsapp.replace(/\s+/g, ''),
         address: formData.address,
         type: deliveryMethod,
@@ -251,11 +245,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
 
           {deliveryMethod === 'usb' && (
             <>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Votre numéro de téléphone" required />
-                <p className="text-xs text-gray-500 mt-1">Nous vous contacterons à ce numéro pour confirmer la livraison</p>
-              </div>
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Adresse de livraison</label>
                 <textarea id="address" value={formData.address} onChange={handleInputChange} rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Votre adresse complète pour la livraison" required></textarea>
