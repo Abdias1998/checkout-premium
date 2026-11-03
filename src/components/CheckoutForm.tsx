@@ -83,6 +83,13 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       },
     };
 
+    const apiKey = import.meta.env.VITE_FEEXPAY_API_KEY;
+    if (!apiKey) {
+      setIsLoading(false);
+      setNotification({ type: 'error', message: 'Configuration manquante (VITE_FEEXPAY_API_KEY). Contactez le support.' });
+      return;
+    }
+
     try {
       const initialResponse = await fetch(`https://api-v2.feexpay.me/api/transactions/public/requesttopay/${formData.mobileOperator}`, {
         method: 'POST',
