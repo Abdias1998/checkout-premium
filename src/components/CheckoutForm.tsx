@@ -65,7 +65,15 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ deliveryMethod, setDelivery
       ? `${countryCode}${formData.mobileNumber}`
       : formData.mobileNumber;
 
+    const shopId = import.meta.env.VITE_FEEXPAY_SHOP_ID;
+    if (!shopId) {
+      setIsLoading(false);
+      setNotification({ type: 'error', message: 'Configuration manquante (VITE_FEEXPAY_SHOP_ID). Contactez le support.' });
+      return;
+    }
+
     const requestBody = {
+      shop: shopId,
       amount,
       phoneNumber: fullPhoneNumber,
       firstName: formData.firstName,
